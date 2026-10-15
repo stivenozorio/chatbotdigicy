@@ -2,7 +2,7 @@
 
 Plataforma multiempresa de chatbots inteligentes para WhatsApp (Node.js + Express + MySQL + API de IA).
 
-**Estado:** estructura inicial con conexión a MySQL preparada. Aún no hay IA ni lógica de negocio.
+**Estado:** estructura inicial con conexión a MySQL preparada. Incluye una ruta de prueba de IA (Gemini); aún no hay WhatsApp ni lógica de negocio.
 
 ## Rutas
 
@@ -11,6 +11,7 @@ Plataforma multiempresa de chatbots inteligentes para WhatsApp (Node.js + Expres
 | `GET /` | Mensaje de que Digicyus AI está funcionando |
 | `GET /health` | Estado en JSON |
 | `GET /health/db` | Comprueba la conexión a MySQL (`200` si funciona, `503` con mensaje genérico si falla) |
+| `POST /api/ai/test` | Prueba de IA: recibe `{"message": "..."}` y devuelve `{"reply": "..."}` |
 | `GET /webhook` | Reservada para la verificación de WhatsApp Cloud API (responde 501 por ahora) |
 
 ## Estructura
@@ -22,6 +23,7 @@ src/config/          Variables de entorno
 src/routes/          Definición de rutas
 src/controllers/     Manejadores de las rutas
 src/services/db.js   Conexión a MySQL (usa solo process.env.DB_*)
+src/services/gemini.js Cliente de la API de Gemini (usa GEMINI_API_KEY)
 src/services/        Lógica de negocio (IA, WhatsApp...) - futuro
 db/schema.sql        Esquema inicial (no se ejecuta automáticamente)
 src/models/          Acceso a datos / multiempresa - futuro
@@ -53,6 +55,20 @@ La conexión usa únicamente `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PA
 2. Prueba la conexión: `GET /health/db` debe responder `{"status":"ok","database":"connected"}`. Si falla, responde `503` sin revelar detalles; el código de error se registra en los logs de la app.
 
 **Multiempresa:** `bots`, `contacts`, `conversations` y `messages` llevan `business_id`, con claves foráneas compuestas `(id, business_id)` para impedir cruzar datos entre negocios. Toda consulta debe filtrar por `business_id`.
+
+## IA con Gemini (prueba)
+
+Variables: `GEMINI_API_KEY` (obligatoria, solo en variables de entorno) y `GEMINI_MODEL` (opcional, por defecto `gemini-2.5-flash`). Los modelos y cuotas del nivel gratuito cambian con frecuencia: confirma en Google AI Studio que el modelo esté disponible para tu clave y, si no, define `GEMINI_MODEL` con otro.
+
+El asistente responde en español como asistente comercial de Digicyus AI y tiene instrucción de no inventar precios, pedidos ni datos del negocio. Esta ruta **no guarda nada en MySQL**.
+
+```bash
+curl -X POST https://TU-VISTA-PREVIA/api/ai/test \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hola, ¿qué puede hacer Digicyus AI por mi negocio?"}'
+```
+
+Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA), `502`/`504` (fallo o demora del proveedor), `503` (clave no configurada). Los mensajes son genéricos; la clave nunca se registra ni se devuelve.
 
 ## Despliegue en GoDaddy Node.js Hosting
 
