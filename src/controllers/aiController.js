@@ -26,8 +26,9 @@ exports.test = async (req, res) => {
     res.json({ reply });
   } catch (err) {
     const status = err instanceof GeminiError ? err.status : 500;
-    // Solo se registra un código interno; nunca el mensaje completo, headers ni la clave.
-    console.error('Fallo en /api/ai/test:', err instanceof GeminiError ? err.code : 'ERROR_DESCONOCIDO');
+    // Se registra el código interno (p. ej. HTTP_404) y el mensaje recortado de Gemini; nunca la clave.
+    const detail = err instanceof GeminiError && err.detail ? ` - ${err.detail}` : '';
+    console.error('Fallo en /api/ai/test:', err instanceof GeminiError ? err.code : 'ERROR_DESCONOCIDO', detail);
     res.status(status).json({ error: PUBLIC_ERRORS[status] || 'Error interno del servidor' });
   }
 };

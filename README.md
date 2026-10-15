@@ -58,7 +58,7 @@ La conexión usa únicamente `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PA
 
 ## IA con Gemini (prueba)
 
-Variables: `GEMINI_API_KEY` (obligatoria, solo en variables de entorno) y `GEMINI_MODEL` (opcional, por defecto `gemini-2.5-flash`). Los modelos y cuotas del nivel gratuito cambian con frecuencia: confirma en Google AI Studio que el modelo esté disponible para tu clave y, si no, define `GEMINI_MODEL` con otro.
+Variables: `GEMINI_API_KEY` (obligatoria, solo en variables de entorno) y `GEMINI_MODEL` (opcional). Si se omite se usa `gemini-2.5-flash`; si Gemini responde 404 para ese modelo, el servidor consulta `ListModels`, elige un modelo Flash disponible para tu clave, lo registra en los logs (puedes fijarlo con `GEMINI_MODEL`) y reintenta.
 
 El asistente responde en español como asistente comercial de Digicyus AI y tiene instrucción de no inventar precios, pedidos ni datos del negocio. Esta ruta **no guarda nada en MySQL**.
 
@@ -68,7 +68,7 @@ curl -X POST https://TU-VISTA-PREVIA/api/ai/test \
   -d '{"message": "Hola, ¿qué puede hacer Digicyus AI por mi negocio?"}'
 ```
 
-Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA), `502`/`504` (fallo o demora del proveedor), `503` (clave no configurada). Los mensajes son genéricos; la clave nunca se registra ni se devuelve.
+Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA), `502` (fallo de Google), `504` (demora), `503` (clave o modelo no disponibles). Los logs muestran el código HTTP de Gemini y su mensaje (sin la clave). Los mensajes son genéricos; la clave nunca se registra ni se devuelve.
 
 ## Despliegue en GoDaddy Node.js Hosting
 
