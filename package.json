@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node -e \"console.log('Sin paso de compilacion: nada que construir')\"",
     "start": "node server.js",
+    "test": "node --test",
     "dev": "node --watch server.js"
   },
   "engines": {

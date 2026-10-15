@@ -24,12 +24,13 @@ const SYSTEM_INSTRUCTION = [
 ].join(' ');
 
 class GeminiError extends Error {
-  constructor(code, status, detail) {
+  constructor(code, status, detail, context) {
     super(code);
     this.name = 'GeminiError';
     this.code = code; // código interno seguro para registrar
     this.status = status; // HTTP status a devolver al cliente
     this.detail = detail || ''; // mensaje seguro y recortado del proveedor (para logs)
+    this.context = context || ''; // operación que falló, p. ej. "generateContent model=x" (para logs)
   }
 }
 
@@ -41,7 +42,7 @@ function safeDetail(text, apiKey) {
   return out;
 }
 
-async function request(path, apiKey, options) {
+async function request(path, apiKey, options, context) {
   try {
     return await fetch(`${API_BASE}/${path}`, {
       ...options,
@@ -49,12 +50,12 @@ async function request(path, apiKey, options) {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (err) {
-    throw new GeminiError(err && err.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK', 504);
+    throw new GeminiError(err && err.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK', 504, '', context);
   }
 }
 
 // Convierte una respuesta HTTP no exitosa en GeminiError con el código HTTP y el mensaje de Google.
-async function toError(response, apiKey) {
+async function toError(response, apiKey, context) {
   let google = {};
   try {
     google = (await response.json()).error || {};
@@ -65,26 +66,35 @@ async function toError(response, apiKey) {
   const detail = safeDetail(`${google.status || ''} ${google.message || ''}`.trim(), apiKey);
   // 429: cuota; 5xx: falla de Google; 400/401/403/404: problema de configuración (clave o modelo).
   const status = s === 429 ? 429 : s >= 500 ? 502 : 503;
-  return new GeminiError(`HTTP_${s}`, status, detail);
+  return new GeminiError(`HTTP_${s}`, status, detail, context);
 }
 
 async function listUsableModels(apiKey) {
-  const response = await request('models?pageSize=200', apiKey, { method: 'GET' });
-  if (!response.ok) throw await toError(response, apiKey);
-  const data = await response.json();
-  return (data.models || [])
+  const context = 'ListModels';
+  const response = await request('models?pageSize=200', apiKey, { method: 'GET' }, context);
+  if (!response.ok) throw await toError(response, apiKey, context);
+  let data;
+  try {
+    data = await response.json();
+  } catch (err) {
+    throw new GeminiError('BAD_RESPONSE', 502, '', context);
+  }
+  return ((data && data.models) || [])
     .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
     .map((m) => String(m.name || '').replace(/^models\//, ''));
 }
 
-function pickModel(available) {
-  const preferred = PREFERRED_MODELS.find((m) => available.includes(m));
-  if (preferred) return preferred;
-  // Último recurso: cualquier Flash estable (sin preview/exp/imagen/audio).
-  return available.find((m) => /flash/.test(m) && !/(preview|exp|image|tts|live|audio|thinking)/.test(m)) || null;
+// Modelos disponibles en orden de preferencia: primero los preferidos, luego cualquier Flash estable
+// (sin preview/exp/imagen/audio).
+function candidateModels(available, exclude) {
+  const preferred = PREFERRED_MODELS.filter((m) => available.includes(m));
+  const otherFlash = available.filter((m) => /flash/.test(m)
+    && !/(preview|exp|image|tts|live|audio|thinking)/.test(m) && !preferred.includes(m));
+  return [...preferred, ...otherFlash].filter((m) => m !== exclude);
 }
 
 async function generate(model, message, apiKey) {
+  const context = `generateContent model=${model}`;
   const response = await request(`models/${encodeURIComponent(model)}:generateContent`, apiKey, {
     method: 'POST',
     body: JSON.stringify({
@@ -92,21 +102,21 @@ async function generate(model, message, apiKey) {
       contents: [{ role: 'user', parts: [{ text: message }] }],
       generationConfig: { maxOutputTokens: 512, temperature: 0.4 },
     }),
-  });
-  if (!response.ok) throw await toError(response, apiKey);
+  }, context);
+  if (!response.ok) throw await toError(response, apiKey, context);
 
   let data;
   try {
     data = await response.json();
   } catch (err) {
-    throw new GeminiError('BAD_RESPONSE', 502);
+    throw new GeminiError('BAD_RESPONSE', 502, '', context);
   }
   const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content
     && data.candidates[0].content.parts;
   const text = Array.isArray(parts) ? parts.map((p) => p.text || '').join('').trim() : '';
   if (!text) {
     const reason = data && data.promptFeedback && data.promptFeedback.blockReason;
-    throw new GeminiError('EMPTY_RESPONSE', 502, reason ? `blockReason=${safeDetail(reason, apiKey)}` : '');
+    throw new GeminiError('EMPTY_RESPONSE', 502, reason ? `blockReason=${safeDetail(reason, apiKey)}` : '', context);
   }
   return text;
 }
@@ -122,21 +132,30 @@ async function generateReply(message) {
     return text;
   } catch (err) {
     if (!(err instanceof GeminiError) || err.code !== 'HTTP_404') throw err;
-
-    // El modelo no existe para esta clave/versión de API: se busca uno disponible y se reintenta una vez.
     resolvedModel = null;
-    console.error(`Gemini: modelo "${model}" no disponible (${err.code} ${err.detail}). Consultando modelos disponibles...`);
-    const available = await listUsableModels(apiKey);
-    const alternative = pickModel(available);
-    if (!alternative || alternative === model) {
-      console.error(`Gemini: ningún modelo utilizable. Disponibles con generateContent: ${available.slice(0, 20).join(', ') || '(ninguno)'}`);
-      throw new GeminiError('NO_MODEL_AVAILABLE', 503);
-    }
-    console.error(`Gemini: usando el modelo "${alternative}". Define GEMINI_MODEL=${alternative} para fijarlo.`);
-    const text = await generate(alternative, message, apiKey);
-    resolvedModel = alternative;
-    return text;
+    console.error(`Gemini: ${err.context} respondió ${err.code} ${err.detail}. Consultando modelos disponibles...`);
   }
+
+  // El modelo no existe para esta clave/versión de API: se busca uno disponible y se prueba (máx. 3).
+  const available = await listUsableModels(apiKey);
+  const candidates = candidateModels(available, model).slice(0, 3);
+  for (const candidate of candidates) {
+    try {
+      const text = await generate(candidate, message, apiKey);
+      resolvedModel = candidate;
+      console.error(`Gemini: usando el modelo "${candidate}". Define GEMINI_MODEL=${candidate} para fijarlo.`);
+      return text;
+    } catch (err) {
+      if (!(err instanceof GeminiError) || err.code !== 'HTTP_404') throw err;
+      console.error(`Gemini: ${err.context} respondió ${err.code} ${err.detail}.`);
+    }
+  }
+  console.error(`Gemini: ningún modelo utilizable. Disponibles con generateContent: ${available.slice(0, 20).join(', ') || '(ninguno)'}`);
+  throw new GeminiError('NO_MODEL_AVAILABLE', 503, '', 'selección de modelo');
 }
 
-module.exports = { generateReply, GeminiError, SYSTEM_INSTRUCTION, PREFERRED_MODELS };
+function resetForTests() {
+  resolvedModel = null;
+}
+
+module.exports = { generateReply, GeminiError, SYSTEM_INSTRUCTION, PREFERRED_MODELS, resetForTests };
