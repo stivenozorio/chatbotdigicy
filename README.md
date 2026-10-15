@@ -23,7 +23,7 @@ src/config/          Variables de entorno
 src/routes/          Definición de rutas
 src/controllers/     Manejadores de las rutas
 src/services/db.js   Conexión a MySQL (usa solo process.env.DB_*)
-src/services/gemini.js Cliente de la API de Gemini (usa GEMINI_API_KEY)
+src/services/gemini.js Cliente de la Interactions API de Gemini (usa GEMINI_API_KEY)
 src/services/        Lógica de negocio (IA, WhatsApp...) - futuro
 db/schema.sql        Esquema inicial (no se ejecuta automáticamente)
 src/models/          Acceso a datos / multiempresa - futuro
@@ -58,7 +58,7 @@ La conexión usa únicamente `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PA
 
 ## IA con Gemini (prueba)
 
-Variables: `GEMINI_API_KEY` (obligatoria, solo en variables de entorno) y `GEMINI_MODEL` (opcional). Si se omite se usa `gemini-2.5-flash`; si Gemini responde 404 para ese modelo, el servidor consulta `ListModels`, elige un modelo Flash disponible para tu clave, lo registra en los logs (puedes fijarlo con `GEMINI_MODEL`) y reintenta.
+Usa la **Interactions API** de Gemini (`POST https://generativelanguage.googleapis.com/v1beta/interactions`, clave en el header `x-goog-api-key`). Variables: `GEMINI_API_KEY` (obligatoria, solo en variables de entorno), `GEMINI_MODEL` (opcional, por defecto `gemini-3.8-flash`) y `GEMINI_THINKING_LEVEL` (opcional: `minimal`, `low`, `medium` o `high`, para reducir la latencia). Hay una sola llamada a Google con un límite de 25 s, sin reintentos ni búsqueda de modelos; si el modelo deja de estar disponible, el error de Google queda en los logs y basta con cambiar `GEMINI_MODEL`.
 
 El asistente responde en español como asistente comercial de Digicyus AI y tiene instrucción de no inventar precios, pedidos ni datos del negocio. Esta ruta **no guarda nada en MySQL**.
 
@@ -68,7 +68,15 @@ curl -X POST https://TU-VISTA-PREVIA/api/ai/test \
   -d '{"message": "Hola, ¿qué puede hacer Digicyus AI por mi negocio?"}'
 ```
 
-Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA), `502` (fallo de Google), `504` (demora), `503` (clave o modelo no disponibles). Los logs muestran el código HTTP de Gemini y su mensaje (sin la clave). Los mensajes son genéricos; la clave nunca se registra ni se devuelve.
+Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA), `502` (fallo de Google), `504` (más de 25 s sin respuesta), `503` (clave o modelo no disponibles). Los logs muestran el código HTTP de Gemini y su mensaje (sin la clave). Los mensajes son genéricos; la clave nunca se registra ni se devuelve.
+
+## Pruebas
+
+```bash
+npm test
+```
+
+Usan Node `node --test` con Gemini simulado (no consumen cuota ni necesitan clave).
 
 ## Despliegue en GoDaddy Node.js Hosting
 
