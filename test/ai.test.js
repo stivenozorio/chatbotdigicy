@@ -139,7 +139,7 @@ test('timeout: 504 JSON, una sola llamada y log con código TIMEOUT', async () =
   assert.equal(res.status, 504);
   assert.deepEqual(JSON.parse(text), { error: 'La IA tardó demasiado en responder.' });
   assert.equal(calls.length, 1);
-  assert.match(logs.join('\n'), /Fallo en \/api\/ai\/test: TIMEOUT \[interactions model=gemini-3\.8-flash\]/);
+  assert.match(logs.join('\n'), /Fallo en \/api\/ai\/test: TIMEOUT \[interactions model=gemini-3\.8-flash\] - sin respuesta de Google tras \d+ ms/);
   assertNoKeyLeak(text);
 });
 

@@ -60,7 +60,7 @@
             pending.textContent = data.reply;
           } else {
             pending.className = 'msg error';
-            pending.textContent = data.error || ('No se pudo obtener respuesta (error HTTP ' + res.status + '). Intenta de nuevo.');
+            pending.textContent = data.error || (res.status === 504 ? 'La IA tardó demasiado en responder. Intenta de nuevo.' : 'No se pudo obtener respuesta (error HTTP ' + res.status + '). Intenta de nuevo.');
           }
         });
       })

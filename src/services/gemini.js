@@ -75,6 +75,9 @@ async function generateReply(message) {
   const generationConfig = { max_output_tokens: 1024 };
   if (process.env.GEMINI_THINKING_LEVEL) generationConfig.thinking_level = process.env.GEMINI_THINKING_LEVEL;
 
+  const startedAt = Date.now();
+  const elapsed = () => `${Date.now() - startedAt} ms`;
+
   let response;
   try {
     response = await fetch(INTERACTIONS_URL, {
@@ -91,7 +94,9 @@ async function generateReply(message) {
     });
   } catch (err) {
     const timedOut = err && (err.name === 'TimeoutError' || err.name === 'AbortError');
-    throw new GeminiError(timedOut ? 'TIMEOUT' : 'NETWORK', 504, '', context);
+    // Para NETWORK se registra el código del error de red (p. ej. ENOTFOUND), nunca la URL ni cabeceras.
+    const cause = err && err.cause && err.cause.code ? ` ${err.cause.code}` : '';
+    throw new GeminiError(timedOut ? 'TIMEOUT' : 'NETWORK', 504, `sin respuesta de Google tras ${elapsed()}${cause}`, context);
   }
 
   if (!response.ok) throw await toError(response, apiKey, context);
@@ -102,7 +107,7 @@ async function generateReply(message) {
   } catch (err) {
     // Incluye el caso de que el cuerpo se corte por el timeout.
     const timedOut = err && (err.name === 'TimeoutError' || err.name === 'AbortError');
-    throw new GeminiError(timedOut ? 'TIMEOUT' : 'BAD_RESPONSE', timedOut ? 504 : 502, '', context);
+    throw new GeminiError(timedOut ? 'TIMEOUT' : 'BAD_RESPONSE', timedOut ? 504 : 502, timedOut ? `cuerpo incompleto tras ${elapsed()}` : '', context);
   }
 
   const text = extractText(data || {});
@@ -110,6 +115,7 @@ async function generateReply(message) {
     const status = data && data.status ? `status=${safeDetail(data.status, apiKey)}` : '';
     throw new GeminiError('EMPTY_RESPONSE', 502, status, context);
   }
+  if (Date.now() - startedAt > 5000) console.error(`Gemini: respuesta lenta (${elapsed()}) [${context}]`);
   return text;
 }
 
