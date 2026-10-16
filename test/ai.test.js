@@ -101,6 +101,25 @@ test('une varios bloques de texto, ignora pensamientos y acepta el formato "outp
   assert.deepEqual(await (await post({ message: 'a' })).json(), { reply: 'Formato anterior' });
 });
 
+test('respuesta con la forma real devuelta por Google (capturada en pruebas con curl)', async () => {
+  handler = () => json(200, {
+    status: 'completed',
+    usage: { total_tokens: 198, total_input_tokens: 2, total_output_tokens: 10, total_thought_tokens: 186 },
+    created: '2026-10-16T20:22:45Z',
+    updated: '2026-10-16T20:22:45Z',
+    service_tier: 'standard',
+    steps: [
+      { signature: 'firma-recortada', type: 'thought' },
+      { content: [{ text: '¡Hola! ¿En qué puedo ayudarte hoy?', type: 'text' }], type: 'model_output' },
+    ],
+    object: 'interaction',
+    model: 'gemini-3.5-flash',
+  });
+  const res = await post({ message: 'Hola' });
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { reply: '¡Hola! ¿En qué puedo ayudarte hoy?' });
+});
+
 test('GEMINI_MODEL y GEMINI_THINKING_LEVEL se envían en el cuerpo', async () => {
   process.env.GEMINI_MODEL = 'gemini-3.5-flash-lite';
   process.env.GEMINI_THINKING_LEVEL = 'low';
