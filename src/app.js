@@ -7,7 +7,11 @@ const routes = require('./routes');
 const app = express();
 
 app.disable('x-powered-by');
-app.use(express.json({ limit: '10kb' }));
+// rawBody se conserva para validar la firma de los webhooks de WhatsApp.
+app.use(express.json({
+  limit: '100kb',
+  verify: (req, res, buf) => { req.rawBody = buf; },
+}));
 // Frontend estático en /app (la ruta / conserva su mensaje de estado).
 app.use('/app', express.static(path.join(__dirname, '..', 'public')));
 app.use(routes);

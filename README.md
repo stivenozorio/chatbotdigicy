@@ -13,7 +13,8 @@ Plataforma multiempresa de chatbots inteligentes para WhatsApp (Node.js + Expres
 | `GET /health` | Estado en JSON |
 | `GET /health/db` | Comprueba la conexión a MySQL (`200` si funciona, `503` con mensaje genérico si falla) |
 | `POST /api/ai/test` | Prueba de IA: recibe `{"message": "..."}` y devuelve `{"reply": "..."}` |
-| `GET /webhook` | Reservada para la verificación de WhatsApp Cloud API (responde 501 por ahora) |
+| `GET /webhook` | Verificación del webhook de WhatsApp Cloud API (Meta) |
+| `POST /webhook` | Recibe mensajes de WhatsApp (firma validada), responde con la IA y envía la respuesta |
 
 ## Estructura
 
@@ -25,6 +26,7 @@ src/config/          Variables de entorno
 src/routes/          Definición de rutas
 src/controllers/     Manejadores de las rutas
 src/services/db.js   Conexión a MySQL (usa solo process.env.DB_*)
+src/services/whatsapp.js Verificación, firma y envío con WhatsApp Cloud API
 src/services/gemini.js Cliente de la Interactions API de Gemini (usa GEMINI_API_KEY)
 src/services/        Lógica de negocio (IA, WhatsApp...) - futuro
 db/schema.sql        Esquema inicial (no se ejecuta automáticamente)
@@ -75,6 +77,26 @@ Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o sup
 ## Frontend
 
 Está en `public/` y Express lo sirve en `/app/`; no requiere build ni dependencias. La demo de chat llama a `POST /api/ai/test` (sin memoria entre mensajes). Como esa ruta consume cuota de Gemini y es pública, tiene un límite global de 20 solicitudes por minuto (configurable con `AI_RATE_LIMIT_PER_MIN`). Antes de publicarla de forma abierta conviene añadir autenticación.
+
+## WhatsApp (Cloud API de Meta)
+
+Variables (en GoDaddy, nunca en el repositorio):
+
+| Variable | Para qué |
+|---|---|
+| `WHATSAPP_VERIFY_TOKEN` | Texto que tú eliges; se escribe igual en Meta al registrar el webhook |
+| `WHATSAPP_APP_SECRET` | "App Secret" de la app de Meta; se usa para validar la firma de cada POST |
+| `WHATSAPP_ACCESS_TOKEN` | Token de acceso (idealmente de usuario del sistema, permanente) para enviar respuestas |
+| `WHATSAPP_GRAPH_VERSION` | Opcional; versión de la Graph API (por defecto `v23.0`) |
+
+Configuración en Meta (developers.facebook.com → tu app → WhatsApp → Configuración):
+1. **URL de devolución de llamada:** `https://ai.digicyus.com/webhook`
+2. **Token de verificación:** el mismo valor que `WHATSAPP_VERIFY_TOKEN`. Meta hace un GET y espera el `challenge`.
+3. Suscríbete al campo **messages**.
+
+Funcionamiento: cada POST se valida con `X-Hub-Signature-256`; si es correcto se responde `200` de inmediato y en segundo plano se consulta a Gemini y se envía la respuesta por la Graph API. Se ignoran los eventos de estado y los mensajes duplicados (reintentos de Meta). Los mensajes que no son de texto reciben una respuesta fija. Si falla la IA, el cliente recibe una disculpa. No se registran números ni contenido de mensajes.
+
+Limitaciones actuales: atiende un único número (el `phone_number_id` que llega en cada mensaje), no guarda conversaciones en MySQL y no tiene memoria entre mensajes. Las pruebas usan Meta y Gemini simulados; no se ha probado contra WhatsApp real.
 
 ## Pruebas
 
