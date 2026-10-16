@@ -79,13 +79,13 @@ test('respuesta exitosa: URL, cuerpo y autenticación de la Interactions API', a
   assert.equal(calls[0].url, INTERACTIONS_URL);
   assert.equal(calls[0].headers['x-goog-api-key'], KEY);
   assert.deepEqual(calls[0].body, {
-    model: 'gemini-3.8-flash',
+    model: 'gemini-3.5-flash',
     input: '¿Qué hacen?',
     system_instruction: SYSTEM_INSTRUCTION,
     generation_config: { max_output_tokens: 1024 },
     store: false,
   });
-  assert.equal(DEFAULT_MODEL, 'gemini-3.8-flash');
+  assert.equal(DEFAULT_MODEL, 'gemini-3.5-flash');
   assert.ok(calls[0].signal, 'la llamada lleva un timeout');
   assertNoKeyLeak();
 });
@@ -102,22 +102,22 @@ test('une varios bloques de texto, ignora pensamientos y acepta el formato "outp
 });
 
 test('GEMINI_MODEL y GEMINI_THINKING_LEVEL se envían en el cuerpo', async () => {
-  process.env.GEMINI_MODEL = 'gemini-3.8-flash-lite';
+  process.env.GEMINI_MODEL = 'gemini-3.5-flash-lite';
   process.env.GEMINI_THINKING_LEVEL = 'low';
   handler = () => interaction('ok');
   await post({ message: 'a' });
-  assert.equal(calls[0].body.model, 'gemini-3.8-flash-lite');
+  assert.equal(calls[0].body.model, 'gemini-3.5-flash-lite');
   assert.equal(calls[0].body.generation_config.thinking_level, 'low');
 });
 
 test('404 (modelo no disponible): una sola llamada, sin buscar modelos, 503 JSON y log con el mensaje de Google', async () => {
-  handler = () => googleError(404, 'NOT_FOUND', 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash');
+  handler = () => googleError(404, 'NOT_FOUND', 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.5-flash');
   const res = await post({ message: 'Hola' });
   const text = await res.text();
   assert.equal(res.status, 503);
   assert.deepEqual(JSON.parse(text), { error: 'El servicio de IA no está disponible.' });
   assert.equal(calls.length, 1, 'sin ListModels ni reintentos');
-  assert.match(logs.join('\n'), /Fallo en \/api\/ai\/test: HTTP_404 \[interactions model=gemini-3\.8-flash\] - NOT_FOUND This model models\/gemini-2\.5-flash is no longer available/);
+  assert.match(logs.join('\n'), /Fallo en \/api\/ai\/test: HTTP_404 \[interactions model=gemini-3\.5-flash\] - NOT_FOUND This model models\/gemini-2\.5-flash is no longer available/);
   assertNoKeyLeak(text);
 });
 
@@ -139,7 +139,7 @@ test('timeout: 504 JSON, una sola llamada y log con código TIMEOUT', async () =
   assert.equal(res.status, 504);
   assert.deepEqual(JSON.parse(text), { error: 'La IA tardó demasiado en responder.' });
   assert.equal(calls.length, 1);
-  assert.match(logs.join('\n'), /Fallo en \/api\/ai\/test: TIMEOUT \[interactions model=gemini-3\.8-flash\] - sin respuesta de Google tras \d+ ms/);
+  assert.match(logs.join('\n'), /Fallo en \/api\/ai\/test: TIMEOUT \[interactions model=gemini-3\.5-flash\] - sin respuesta de Google tras \d+ ms/);
   assertNoKeyLeak(text);
 });
 
@@ -167,7 +167,7 @@ test('otros errores de Google y respuestas inválidas devuelven JSON controlado'
 test('la clave que Google devuelva en un mensaje se censura en los logs', async () => {
   handler = () => googleError(400, 'INVALID_ARGUMENT', `API key not valid: ${KEY}`);
   await post({ message: 'Hola' });
-  assert.match(logs.join('\n'), /HTTP_400 \[interactions model=gemini-3\.8-flash\] - INVALID_ARGUMENT API key not valid: \[REDACTED\]/);
+  assert.match(logs.join('\n'), /HTTP_400 \[interactions model=gemini-3\.5-flash\] - INVALID_ARGUMENT API key not valid: \[REDACTED\]/);
   assertNoKeyLeak();
 });
 

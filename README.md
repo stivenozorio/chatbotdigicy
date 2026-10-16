@@ -60,7 +60,7 @@ La conexión usa únicamente `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PA
 
 ## IA con Gemini (prueba)
 
-Usa la **Interactions API** de Gemini (`POST https://generativelanguage.googleapis.com/v1beta/interactions`, clave en el header `x-goog-api-key`). Variables: `GEMINI_API_KEY` (obligatoria, solo en variables de entorno), `GEMINI_MODEL` (opcional, por defecto `gemini-3.8-flash`) y `GEMINI_THINKING_LEVEL` (opcional: `minimal`, `low`, `medium` o `high`, para reducir la latencia). Hay una sola llamada a Google con un límite de 25 s, sin reintentos ni búsqueda de modelos; si el modelo deja de estar disponible, el error de Google queda en los logs y basta con cambiar `GEMINI_MODEL`.
+Usa la **Interactions API** de Gemini (`POST https://generativelanguage.googleapis.com/v1beta/interactions`, clave en el header `x-goog-api-key`). Variables: `GEMINI_API_KEY` (obligatoria, solo en variables de entorno), `GEMINI_MODEL` (opcional, por defecto `gemini-3.5-flash`) y `GEMINI_THINKING_LEVEL` (opcional: `minimal`, `low`, `medium` o `high`, para reducir la latencia). Hay una sola llamada a Google con un límite de 25 s, sin reintentos ni búsqueda de modelos; si el modelo deja de estar disponible, el error de Google queda en los logs y basta con cambiar `GEMINI_MODEL`.
 
 El asistente responde en español como asistente comercial de Digicyus AI y tiene instrucción de no inventar precios, pedidos ni datos del negocio. Esta ruta **no guarda nada en MySQL**.
 

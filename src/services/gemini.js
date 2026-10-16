@@ -5,7 +5,7 @@
 // Formato verificado contra los tipos del SDK oficial @google/genai 2.30.0.
 
 const INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-const DEFAULT_MODEL = 'gemini-3.8-flash';
+const DEFAULT_MODEL = 'gemini-3.5-flash';
 const TIMEOUT_MS = 25000; // límite de la única llamada a Google; no hay reintentos ni búsqueda de modelos
 
 const SYSTEM_INSTRUCTION = [
@@ -112,8 +112,11 @@ async function generateReply(message) {
 
   const text = extractText(data || {});
   if (!text) {
-    const status = data && data.status ? `status=${safeDetail(data.status, apiKey)}` : '';
-    throw new GeminiError('EMPTY_RESPONSE', 502, status, context);
+    // Se registra solo la estructura (nombres de campos y tipos de paso), nunca el contenido.
+    const keys = data && typeof data === 'object' ? Object.keys(data).join(',') : typeof data;
+    const types = data && Array.isArray(data.steps) ? data.steps.map((st) => (st && st.type) || '?').join(',') : '';
+    const status = data && data.status ? ` status=${safeDetail(data.status, apiKey)}` : '';
+    throw new GeminiError('EMPTY_RESPONSE', 502, `sin texto; campos=${keys}; pasos=${types}${status}`, context);
   }
   if (Date.now() - startedAt > 5000) console.error(`Gemini: respuesta lenta (${elapsed()}) [${context}]`);
   return text;
