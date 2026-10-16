@@ -9,6 +9,7 @@ Plataforma multiempresa de chatbots inteligentes para WhatsApp (Node.js + Expres
 | Ruta | Descripción |
 |------|-------------|
 | `GET /` | Mensaje de que Digicyus AI está funcionando |
+| `GET /app/` | Frontend: página de presentación y demo de chat con la IA |
 | `GET /health` | Estado en JSON |
 | `GET /health/db` | Comprueba la conexión a MySQL (`200` si funciona, `503` con mensaje genérico si falla) |
 | `POST /api/ai/test` | Prueba de IA: recibe `{"message": "..."}` y devuelve `{"reply": "..."}` |
@@ -18,6 +19,7 @@ Plataforma multiempresa de chatbots inteligentes para WhatsApp (Node.js + Expres
 
 ```
 server.js            Punto de entrada (escucha en process.env.PORT)
+public/              Frontend estático (HTML, CSS y JS sin build), servido en /app/
 src/app.js           Configuración de Express
 src/config/          Variables de entorno
 src/routes/          Definición de rutas
@@ -69,6 +71,10 @@ curl -X POST https://TU-VISTA-PREVIA/api/ai/test \
 ```
 
 Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA), `502` (fallo de Google), `504` (más de 25 s sin respuesta), `503` (clave o modelo no disponibles). Los logs muestran el código HTTP de Gemini y su mensaje (sin la clave). Los mensajes son genéricos; la clave nunca se registra ni se devuelve.
+
+## Frontend
+
+Está en `public/` y Express lo sirve en `/app/`; no requiere build ni dependencias. La demo de chat llama a `POST /api/ai/test` (sin memoria entre mensajes). Como esa ruta consume cuota de Gemini y es pública, tiene un límite global de 20 solicitudes por minuto (configurable con `AI_RATE_LIMIT_PER_MIN`). Antes de publicarla de forma abierta conviene añadir autenticación.
 
 ## Pruebas
 

@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 
 const app = require('../src/app');
+const aiRateLimit = require('../src/middlewares/rateLimit');
 const { INTERACTIONS_URL, DEFAULT_MODEL, SYSTEM_INSTRUCTION } = require('../src/services/gemini');
 
 const KEY = 'TEST-KEY-do-not-leak-123';
@@ -47,6 +48,8 @@ test.beforeEach(() => {
   process.env.GEMINI_API_KEY = KEY;
   delete process.env.GEMINI_MODEL;
   delete process.env.GEMINI_THINKING_LEVEL;
+  process.env.AI_RATE_LIMIT_PER_MIN = '1000';
+  aiRateLimit.reset();
   calls = [];
   logs = [];
   console.error = (...a) => logs.push(a.join(' '));
@@ -190,4 +193,26 @@ test('rutas existentes siguen respondiendo', async () => {
   const health = await realFetch(`${url}/health`);
   assert.equal(health.status, 200);
   assert.equal((await health.json()).status, 'ok');
+});
+
+test('límite de solicitudes: la solicitud N+1 recibe 429 JSON sin llamar a Google', async () => {
+  process.env.AI_RATE_LIMIT_PER_MIN = '2';
+  handler = () => interaction('ok');
+  assert.equal((await post({ message: 'a' })).status, 200);
+  assert.equal((await post({ message: 'b' })).status, 200);
+  const res = await post({ message: 'c' });
+  assert.equal(res.status, 429);
+  assert.ok(res.headers.get('retry-after'));
+  assert.ok(typeof (await res.json()).error === 'string');
+  assert.equal(calls.length, 2);
+});
+
+test('frontend estático en /app/ y / conserva su mensaje', async () => {
+  const page = await realFetch(`${url}/app/`);
+  assert.equal(page.status, 200);
+  assert.match(page.headers.get('content-type'), /text\/html/);
+  assert.match(await page.text(), /Digicyus AI/);
+  assert.equal((await realFetch(`${url}/app/app.js`)).status, 200);
+  assert.equal((await realFetch(`${url}/app/styles.css`)).status, 200);
+  assert.equal(await (await realFetch(`${url}/`)).text(), 'Digicyus AI está funcionando');
 });

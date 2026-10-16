@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digicyus AI · Chatbots inteligentes para WhatsApp</title>
+  <meta name="description" content="Digicyus AI: plataforma multiempresa de chatbots con inteligencia artificial para atender a tus clientes por WhatsApp.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%234f46e5%27/%3E%3Ctext x=%2716%27 y=%2723%27 font-size=%2720%27 font-family=%27sans-serif%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27white%27%3ED%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#inicio"><span class="brand-mark" aria-hidden="true">D</span> Digicyus AI</a>
+    <nav aria-label="Principal">
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#demo">Probar la IA</a>
+    </nav>
+  </header>
+
+  <main id="inicio">
+    <section class="hero">
+      <p class="eyebrow">Plataforma multiempresa</p>
+      <h1>Chatbots inteligentes para atender a tus clientes por WhatsApp</h1>
+      <p class="lead">Cada negocio tiene su propio asistente con inteligencia artificial, que responde en español y deriva a una persona cuando no tiene la información.</p>
+      <a class="button" href="#demo">Probar el asistente</a>
+    </section>
+
+    <section id="como-funciona" class="section">
+      <h2>Cómo funciona</h2>
+      <ol class="steps">
+        <li><h3>Un asistente por negocio</h3><p>Cada empresa mantiene sus datos y conversaciones separados de los demás.</p></li>
+        <li><h3>Respuestas con IA</h3><p>El asistente contesta en español con un tono amable y sin inventar precios, pedidos ni datos del negocio.</p></li>
+        <li><h3>Atención por WhatsApp</h3><p>La conexión con WhatsApp está en preparación y aún no está activa.</p></li>
+      </ol>
+    </section>
+
+    <section id="demo" class="section">
+      <h2>Prueba el asistente</h2>
+      <p class="muted">Demo técnica: cada pregunta se responde de forma independiente, sin memoria de la conversación.</p>
+      <div class="chat" role="region" aria-label="Demo del asistente">
+        <div id="log" class="log" role="log" aria-live="polite">
+          <div class="msg bot">Hola, soy el asistente de Digicyus AI. ¿En qué puedo ayudarte?</div>
+        </div>
+        <form id="form" class="composer" autocomplete="off">
+          <label for="message" class="sr-only">Tu mensaje</label>
+          <textarea id="message" rows="2" maxlength="1000" placeholder="Escribe tu mensaje…" required></textarea>
+          <button id="send" class="button" type="submit">Enviar</button>
+        </form>
+        <p id="counter" class="muted small" aria-hidden="true">0 / 1000</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">© <span id="year"></span> Digicyus AI</footer>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const express = require('express');
 const routes = require('./routes');
 
@@ -7,6 +8,8 @@ const app = express();
 
 app.disable('x-powered-by');
 app.use(express.json({ limit: '10kb' }));
+// Frontend estático en /app (la ruta / conserva su mensaje de estado).
+app.use('/app', express.static(path.join(__dirname, '..', 'public')));
 app.use(routes);
 
 app.use((req, res) => {
