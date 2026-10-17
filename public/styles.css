@@ -1,25 +1,29 @@
 :root {
-  --bg: #f7f8fc;
+  /* Paleta tomada del logo de Digicy: negro, cian #22acc8 y azul #3060a0.
+     El cian se oscurece para los botones, para que el texto blanco tenga contraste suficiente. */
+  --bg: #f5f9fb;
   --surface: #ffffff;
-  --text: #171a2b;
-  --muted: #5b6079;
-  --border: #e1e4f0;
-  --accent: #4f46e5;
+  --text: #10202a;
+  --muted: #526571;
+  --border: #d8e6ec;
+  --accent: #0e7c99;
   --accent-text: #ffffff;
-  --bot: #eef0fb;
+  --accent-2: #3060a0;
+  --bot: #e6f4f8;
   --error: #b42318;
   --error-bg: #fdecea;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1120;
-    --surface: #181b2f;
-    --text: #eceefb;
-    --muted: #a3a8c6;
-    --border: #2b2f4a;
-    --accent: #7c75ff;
-    --accent-text: #0f1120;
-    --bot: #23274a;
+    --bg: #0b1118;
+    --surface: #121b25;
+    --text: #e8f1f5;
+    --muted: #9db0bb;
+    --border: #223140;
+    --accent: #3cc0dc;
+    --accent-text: #06212a;
+    --accent-2: #6f9be0;
+    --bot: #17303d;
     --error: #ffb4a9;
     --error-bg: #3a1d1d;
   }
@@ -42,8 +46,8 @@ a { color: inherit; }
 .site-header nav { display: flex; gap: 20px; }
 .site-header nav a { text-decoration: none; color: var(--muted); }
 .site-header nav a:hover { color: var(--text); }
-.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; }
-.brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--accent); color: var(--accent-text); }
+.brand { display: inline-flex; align-items: center; padding: 4px 10px; background: #fff; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; }
+.logo { display: block; height: 48px; width: auto; }
 
 .hero { padding: 56px 0 40px; }
 .eyebrow { margin: 0 0 8px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.8rem; }

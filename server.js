@@ -9,5 +9,5 @@ process.on('unhandledRejection', (reason) => {
 });
 
 app.listen(config.port, () => {
-  console.log(`Digicyus SI escuchando en el puerto ${config.port}`);
+  console.log(`Digicy SI escuchando en el puerto ${config.port}`);
 });

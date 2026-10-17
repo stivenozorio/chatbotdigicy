@@ -1,4 +1,4 @@
--- Esquema inicial de Digicyus SI (MySQL 5.7+/8.x).
+-- Esquema inicial de Digicy SI (MySQL 5.7+/8.x).
 -- Solo crea tablas si no existen; no borra ni modifica datos existentes.
 -- NO se ejecuta automáticamente: aplícalo manualmente en la base de datos.
 --

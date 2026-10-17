@@ -1,4 +1,4 @@
-# Digicyus SI
+# Digicy SI
 
 SI = *Super Intelligence*. Dominio: `https://si.digicyus.com`.
 
@@ -10,7 +10,7 @@ Plataforma multiempresa de chatbots inteligentes para WhatsApp (Node.js + Expres
 
 | Ruta | Descripción |
 |------|-------------|
-| `GET /` | Mensaje de que Digicyus SI está funcionando |
+| `GET /` | Mensaje de que Digicy SI está funcionando |
 | `GET /app/` | Frontend: página de presentación y demo de chat con la IA |
 | `GET /health` | Estado en JSON |
 | `GET /health/db` | Comprueba la conexión a MySQL (`200` si funciona, `503` con mensaje genérico si falla) |
@@ -66,12 +66,12 @@ La conexión usa únicamente `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PA
 
 Usa la **Interactions API** de Gemini (`POST https://generativelanguage.googleapis.com/v1beta/interactions`, clave en el header `x-goog-api-key`). Variables: `GEMINI_API_KEY` (obligatoria, solo en variables de entorno), `GEMINI_MODEL` (opcional, por defecto `gemini-3.5-flash-lite`) y `GEMINI_THINKING_LEVEL` (opcional: `minimal`, `low`, `medium` o `high`, para reducir la latencia). Hay una sola llamada a Google con un límite de 25 s, sin reintentos ni búsqueda de modelos; si el modelo deja de estar disponible, el error de Google queda en los logs y basta con cambiar `GEMINI_MODEL`.
 
-El asistente responde en español como asistente comercial de Digicyus SI y tiene instrucción de no inventar precios, pedidos ni datos del negocio. Esta ruta **no guarda nada en MySQL**.
+El asistente responde en español como asistente comercial de Digicy SI y tiene instrucción de no inventar precios, pedidos ni datos del negocio. Esta ruta **no guarda nada en MySQL**.
 
 ```bash
 curl -X POST https://TU-VISTA-PREVIA/api/ai/test \
   -H "Content-Type: application/json" \
-  -d '{"message": "Hola, ¿qué puede hacer Digicyus SI por mi negocio?"}'
+  -d '{"message": "Hola, ¿qué puede hacer Digicy SI por mi negocio?"}'
 ```
 
 Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA o límite interno) y `503` (clave o modelo no disponibles, fallo o demora de Google, respuesta inválida). Se usa 503 y no 502/504 porque Cloudflare sustituye el cuerpo de esos dos códigos por su propia página. Si Google responde 500/503 se reintenta una vez. Los logs muestran el código HTTP de Gemini y su mensaje (sin la clave).
