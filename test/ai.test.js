@@ -268,5 +268,12 @@ test('frontend estático en /app/ y / conserva su mensaje', async () => {
   assert.equal((await realFetch(`${url}/app/app.js`)).status, 200);
   assert.equal((await realFetch(`${url}/app/styles.css`)).status, 200);
   assert.equal((await realFetch(`${url}/app/logo.png`)).status, 200);
+  for (const route of ['/app/privacidad.html', '/app/privacidad']) {
+    const res = await realFetch(`${url}${route}`);
+    assert.equal(res.status, 200);
+    const html = await res.text();
+    assert.match(html, /Política de privacidad/);
+    assert.match(html, /digicyus@gmail\.com/);
+  }
   assert.equal(await (await realFetch(`${url}/`)).text(), 'Digicy SI está funcionando');
 });

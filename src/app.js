@@ -13,7 +13,7 @@ app.use(express.json({
   verify: (req, res, buf) => { req.rawBody = buf; },
 }));
 // Frontend estático en /app (la ruta / conserva su mensaje de estado).
-app.use('/app', express.static(path.join(__dirname, '..', 'public')));
+app.use('/app', express.static(path.join(__dirname, '..', 'public'), { extensions: ['html'] }));
 app.use(routes);
 
 app.use((req, res) => {
