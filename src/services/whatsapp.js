@@ -5,7 +5,7 @@
 
 const crypto = require('crypto');
 
-const DEFAULT_GRAPH_VERSION = 'v23.0'; // configurable con WHATSAPP_GRAPH_VERSION
+const DEFAULT_GRAPH_VERSION = 'v25.0'; // configurable con WHATSAPP_GRAPH_VERSION
 const SEND_TIMEOUT_MS = 15000;
 
 function safeEqual(a, b) {

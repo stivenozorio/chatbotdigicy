@@ -133,7 +133,7 @@ test('mensaje de texto: responde 200 de inmediato, consulta a Gemini y envía la
   assert.equal(gemini.body.input, '¿Qué servicios tienen?');
 
   const g = graphCalls()[0];
-  assert.equal(g.url, 'https://graph.facebook.com/v23.0/555000111/messages');
+  assert.equal(g.url, 'https://graph.facebook.com/v25.0/555000111/messages');
   assert.equal(g.headers.Authorization, `Bearer ${TOKEN}`);
   assert.deepEqual(g.body, {
     messaging_product: 'whatsapp',

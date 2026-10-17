@@ -89,7 +89,7 @@ Variables (en GoDaddy, nunca en el repositorio):
 | `WHATSAPP_VERIFY_TOKEN` | Texto que tú eliges; se escribe igual en Meta al registrar el webhook |
 | `WHATSAPP_APP_SECRET` | "App Secret" de la app de Meta; se usa para validar la firma de cada POST |
 | `WHATSAPP_ACCESS_TOKEN` | Token de acceso (idealmente de usuario del sistema, permanente) para enviar respuestas |
-| `WHATSAPP_GRAPH_VERSION` | Opcional; versión de la Graph API (por defecto `v23.0`) |
+| `WHATSAPP_GRAPH_VERSION` | Opcional; versión de la Graph API (por defecto `v25.0`) |
 
 Configuración en Meta (developers.facebook.com → tu app → WhatsApp → Configuración):
 1. **URL de devolución de llamada:** `https://si.digicyus.com/webhook`
