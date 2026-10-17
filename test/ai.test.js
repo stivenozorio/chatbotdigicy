@@ -151,35 +151,69 @@ test('429 (cuota): responde 429 JSON sin reintentar', async () => {
   assertNoKeyLeak(text);
 });
 
-test('timeout: 504 JSON, una sola llamada y log con código TIMEOUT', async () => {
+test('timeout: 503 JSON, una sola llamada y log con código TIMEOUT', async () => {
   handler = () => { throw new DOMException('The operation was aborted due to timeout', 'TimeoutError'); };
   const res = await post({ message: 'Hola' });
   const text = await res.text();
-  assert.equal(res.status, 504);
-  assert.deepEqual(JSON.parse(text), { error: 'La IA tardó demasiado en responder.' });
+  assert.equal(res.status, 503);
+  assert.deepEqual(JSON.parse(text), { error: 'La IA tardó demasiado en responder. Intenta de nuevo.' });
   assert.equal(calls.length, 1);
   assert.match(logs.join('\n'), /Fallo en \/api\/ai\/test: TIMEOUT \[interactions model=gemini-3\.5-flash-lite\] - sin respuesta de Google tras \d+ ms/);
   assertNoKeyLeak(text);
 });
 
-test('otros errores de Google y respuestas inválidas devuelven JSON controlado', async () => {
+test('otros errores de Google y respuestas inválidas devuelven JSON controlado (503, nunca 502/504)', async () => {
   const cases = [
-    [() => googleError(500, 'INTERNAL', 'boom'), 502],
-    [() => googleError(400, 'INVALID_ARGUMENT', `API key not valid ${KEY}`), 503],
-    [() => new Response('<html>no json</html>', { status: 403 }), 503],
-    [() => { throw new TypeError('fetch failed'); }, 504],
-    [() => new Response('no es json', { status: 200 }), 502],
-    [() => json(200, { steps: [] }), 502],
-    [() => json(200, null), 502],
+    [() => googleError(400, 'INVALID_ARGUMENT', `API key not valid ${KEY}`), /no está disponible/],
+    [() => new Response('<html>no json</html>', { status: 403 }), /no está disponible/],
+    [() => { throw new TypeError('fetch failed'); }, /No se pudo obtener respuesta/],
+    [() => new Response('no es json', { status: 200 }), /No se pudo obtener respuesta/],
+    [() => json(200, { steps: [] }), /No se pudo obtener respuesta/],
+    [() => json(200, null), /No se pudo obtener respuesta/],
   ];
   for (const [h, expected] of cases) {
     logs = [];
     handler = h;
     const res = await post({ message: 'Hola' });
     const text = await res.text();
-    assert.equal(res.status, expected);
-    assert.ok(typeof JSON.parse(text).error === 'string');
+    assert.equal(res.status, 503);
+    assert.match(JSON.parse(text).error, expected);
     assertNoKeyLeak(text);
+  }
+});
+
+test('Google 503 (alta demanda): se reintenta una vez y, si se recupera, el usuario recibe la respuesta', async () => {
+  let n = 0;
+  handler = () => { n += 1; return n === 1 ? googleError(503, 'UNAVAILABLE', 'high demand') : interaction('Ya funciona'); };
+  const res = await post({ message: 'Hola' });
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { reply: 'Ya funciona' });
+  assert.equal(calls.length, 2);
+  assert.match(logs.join('\n'), /HTTP_503 .* Reintentando una vez/);
+});
+
+test('Google 503 persistente: dos llamadas como máximo y 503 JSON con mensaje claro', async () => {
+  handler = () => googleError(503, 'UNAVAILABLE', 'high demand');
+  const res = await post({ message: 'Hola' });
+  const text = await res.text();
+  assert.equal(res.status, 503);
+  assert.deepEqual(JSON.parse(text), { error: 'No se pudo obtener respuesta de la IA. Intenta de nuevo.' });
+  assert.equal(calls.length, 2);
+  assert.match(logs.join('\n'), /Fallo en \/api\/ai\/test: HTTP_503 .* - UNAVAILABLE high demand/);
+  assertNoKeyLeak(text);
+});
+
+test('Google 500 sin recuperación: 503 JSON; 429, 404 y timeout no se reintentan', async () => {
+  for (const [h, expectedStatus] of [
+    [() => googleError(429, 'RESOURCE_EXHAUSTED', 'quota'), 429],
+    [() => googleError(404, 'NOT_FOUND', 'no model'), 503],
+    [() => { throw new DOMException('timeout', 'TimeoutError'); }, 503],
+  ]) {
+    calls = [];
+    handler = h;
+    const res = await post({ message: 'Hola' });
+    assert.equal(res.status, expectedStatus);
+    assert.equal(calls.length, 1);
   }
 });
 

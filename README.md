@@ -72,7 +72,7 @@ curl -X POST https://TU-VISTA-PREVIA/api/ai/test \
   -d '{"message": "Hola, ¿qué puede hacer Digicyus AI por mi negocio?"}'
 ```
 
-Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA), `502` (fallo de Google), `504` (más de 25 s sin respuesta), `503` (clave o modelo no disponibles). Los logs muestran el código HTTP de Gemini y su mensaje (sin la clave). Los mensajes son genéricos; la clave nunca se registra ni se devuelve.
+Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA o límite interno) y `503` (clave o modelo no disponibles, fallo o demora de Google, respuesta inválida). Se usa 503 y no 502/504 porque Cloudflare sustituye el cuerpo de esos dos códigos por su propia página. Si Google responde 500/503 se reintenta una vez. Los logs muestran el código HTTP de Gemini y su mensaje (sin la clave).
 
 ## Frontend
 

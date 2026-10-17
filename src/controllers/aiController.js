@@ -4,12 +4,17 @@ const { generateReply, GeminiError } = require('../services/gemini');
 
 const MAX_MESSAGE_LENGTH = 1000;
 
-const PUBLIC_ERRORS = {
-  429: 'La IA alcanzó su límite de uso (por minuto o por día). Espera un minuto e intenta de nuevo; si persiste, vuelve más tarde.',
-  502: 'No se pudo obtener respuesta de la IA.',
-  503: 'El servicio de IA no está disponible.',
-  504: 'La IA tardó demasiado en responder.',
-};
+const QUOTA_MESSAGE = 'La IA alcanzó su límite de uso (por minuto o por día). Espera un minuto e intenta de nuevo; si persiste, vuelve más tarde.';
+const CONFIG_CODES = new Set(['NOT_CONFIGURED', 'HTTP_400', 'HTTP_401', 'HTTP_403', 'HTTP_404']);
+
+// Mensaje genérico para el usuario según el tipo de fallo (nunca detalles del proveedor).
+function publicMessage(err) {
+  if (!(err instanceof GeminiError)) return 'Error interno del servidor';
+  if (err.code === 'HTTP_429') return QUOTA_MESSAGE;
+  if (err.code === 'TIMEOUT') return 'La IA tardó demasiado en responder. Intenta de nuevo.';
+  if (CONFIG_CODES.has(err.code)) return 'El servicio de IA no está disponible.';
+  return 'No se pudo obtener respuesta de la IA. Intenta de nuevo.';
+}
 
 exports.test = async (req, res) => {
   const message = req.body && req.body.message;
@@ -34,6 +39,6 @@ exports.test = async (req, res) => {
     } else {
       console.error('Fallo en /api/ai/test: ERROR_DESCONOCIDO', err && err.name);
     }
-    res.status(status).json({ error: PUBLIC_ERRORS[status] || 'Error interno del servidor' });
+    res.status(status).json({ error: publicMessage(err) });
   }
 };
