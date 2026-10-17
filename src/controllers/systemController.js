@@ -3,7 +3,7 @@
 const db = require('../services/db');
 
 exports.home = (req, res) => {
-  res.send('Digicyus AI está funcionando');
+  res.send('Digicyus SI está funcionando');
 };
 
 exports.health = (req, res) => {

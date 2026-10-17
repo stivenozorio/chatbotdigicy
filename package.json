@@ -1,7 +1,7 @@
 {
   "name": "digicyus-ai",
   "version": "0.1.0",
-  "description": "Digicyus AI - plataforma multiempresa de chatbots inteligentes para WhatsApp",
+  "description": "Digicyus SI - plataforma multiempresa de chatbots inteligentes para WhatsApp",
   "main": "server.js",
   "private": true,
   "scripts": {

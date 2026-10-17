@@ -264,8 +264,8 @@ test('frontend estático en /app/ y / conserva su mensaje', async () => {
   const page = await realFetch(`${url}/app/`);
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-type'), /text\/html/);
-  assert.match(await page.text(), /Digicyus AI/);
+  assert.match(await page.text(), /Digicyus SI/);
   assert.equal((await realFetch(`${url}/app/app.js`)).status, 200);
   assert.equal((await realFetch(`${url}/app/styles.css`)).status, 200);
-  assert.equal(await (await realFetch(`${url}/`)).text(), 'Digicyus AI está funcionando');
+  assert.equal(await (await realFetch(`${url}/`)).text(), 'Digicyus SI está funcionando');
 });

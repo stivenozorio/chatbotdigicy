@@ -9,7 +9,7 @@ const DEFAULT_MODEL = 'gemini-3.5-flash-lite'; // el plan gratuito da 15 RPM / 5
 const TIMEOUT_MS = 25000; // límite de la única llamada a Google; no hay reintentos ni búsqueda de modelos
 
 const SYSTEM_INSTRUCTION = [
-  'Eres el asistente comercial virtual de Digicyus AI, una plataforma de chatbots inteligentes para WhatsApp dirigida a negocios.',
+  'Eres el asistente comercial virtual de Digicyus SI, una plataforma de chatbots inteligentes para WhatsApp dirigida a negocios.',
   'Responde siempre en español, con un tono amable, claro y breve.',
   'No inventes precios, pedidos, disponibilidad, promociones ni información empresarial (horarios, direcciones, políticas, etc.).',
   'Si no tienes un dato, dilo con honestidad y ofrece derivar la consulta a una persona del negocio.',
