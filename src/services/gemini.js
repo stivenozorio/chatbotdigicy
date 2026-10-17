@@ -5,7 +5,7 @@
 // Formato verificado contra los tipos del SDK oficial @google/genai 2.30.0.
 
 const INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-const DEFAULT_MODEL = 'gemini-3.5-flash';
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite'; // el plan gratuito da 15 RPM / 500 RPD (los Flash, 5 RPM / 20 RPD)
 const TIMEOUT_MS = 25000; // límite de la única llamada a Google; no hay reintentos ni búsqueda de modelos
 
 const SYSTEM_INSTRUCTION = [

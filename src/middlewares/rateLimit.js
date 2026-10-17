@@ -7,7 +7,7 @@ let windowStart = 0;
 let count = 0;
 
 function aiRateLimit(req, res, next) {
-  const max = Number(process.env.AI_RATE_LIMIT_PER_MIN) || 20;
+  const max = Number(process.env.AI_RATE_LIMIT_PER_MIN) || 10; // por debajo de los 15 RPM de Flash-Lite en el plan gratuito
   const now = Date.now();
   if (now - windowStart >= WINDOW_MS) {
     windowStart = now;

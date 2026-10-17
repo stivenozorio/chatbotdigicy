@@ -5,7 +5,7 @@ const { generateReply, GeminiError } = require('../services/gemini');
 const MAX_MESSAGE_LENGTH = 1000;
 
 const PUBLIC_ERRORS = {
-  429: 'Se alcanzó el límite de uso de la IA. Intenta de nuevo más tarde.',
+  429: 'La IA alcanzó su límite de uso (por minuto o por día). Espera un minuto e intenta de nuevo; si persiste, vuelve más tarde.',
   502: 'No se pudo obtener respuesta de la IA.',
   503: 'El servicio de IA no está disponible.',
   504: 'La IA tardó demasiado en responder.',
