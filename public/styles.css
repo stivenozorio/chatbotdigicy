@@ -95,3 +95,6 @@ h3 { margin: 0 0 4px; font-size: 1.05rem; }
 .prose h2 { margin-top: 28px; font-size: 1.15rem; }
 .prose ul { padding-left: 20px; }
 .prose a, .site-footer a { color: var(--accent); }
+
+.site-footer .legal { display: block; margin: 4px 0; font-style: normal; }
+.site-footer { line-height: 1.7; }

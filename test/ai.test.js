@@ -275,6 +275,8 @@ test('frontend estático en /app/ y / conserva su mensaje', async () => {
     const html = await res.text();
     assert.match(html, /privacidad|Eliminación de datos/i);
     assert.match(html, /digicyus@gmail\.com/);
+    assert.match(html, /DIGICY LLC/);
+    assert.match(html, /7720 NW 8th St, Pembroke Pines, FL 33024/);
   }
   assert.equal(await (await realFetch(`${url}/`)).text(), 'Digicy SI está funcionando');
 });
