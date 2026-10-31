@@ -3,10 +3,12 @@
 const path = require('path');
 const express = require('express');
 const routes = require('./routes');
+const cors = require('./middlewares/cors');
 
 const app = express();
 
 app.disable('x-powered-by');
+app.use(cors);
 // rawBody se conserva para validar la firma de los webhooks de WhatsApp.
 app.use(express.json({
   limit: '100kb',
