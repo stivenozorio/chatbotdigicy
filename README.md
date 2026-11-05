@@ -88,7 +88,9 @@ Variables: `GA_CLIENT_EMAIL` y `GA_PRIVATE_KEY` (del archivo JSON de la cuenta d
 curl https://TU-VISTA-PREVIA/api/analytics/summary?days=7
 ```
 
-Respuesta: `{"days":7,"totals":{"activeUsers":...,"pageViews":...,"eventCount":...},"events":[{"name":"page_view","count":...},...]}`. `days` es opcional (por defecto 7, máximo 90). Límite de `ANALYTICS_RATE_LIMIT_PER_MIN` (por defecto 30) solicitudes por minuto. El token de acceso de Google se cachea en memoria mientras es válido (dura 1 hora), en vez de pedirse en cada solicitud.
+Respuesta: `{"days":7,"totals":{"activeUsers":...,"pageViews":...,"eventCount":...},"events":[{"name":"page_view","count":...},...],"contactByMethod":[{"method":"whatsapp","count":...},...]}`. `days` es opcional (por defecto 7, máximo 90). Límite de `ANALYTICS_RATE_LIMIT_PER_MIN` (por defecto 30) solicitudes por minuto. El token de acceso de Google se cachea en memoria mientras es válido (dura 1 hora), en vez de pedirse en cada solicitud.
+
+`contactByMethod` desglosa el evento `contact_click` por el parámetro `method` (whatsapp/call/email) -- depende de una dimensión personalizada que hay que crear a mano en GA4 (Admin -> Custom definitions -> Create custom dimension, scope **Event**, parámetro del evento `method`). Mientras no exista, `contactByMethod` llega como `null` y el resto de la respuesta sigue funcionando igual.
 
 ## Frontend
 

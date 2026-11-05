@@ -23,12 +23,37 @@ function metricValue(row, index) {
   return v ? Number(v) : 0;
 }
 
+// Desglose de contact_click por "method" (whatsapp/call/email) -- depende
+// de una dimensión personalizada que no existe hasta que se crea a mano en
+// GA4 (Admin -> Custom definitions, scope Event, parámetro "method"). Si
+// todavía no existe, Google responde con un error de dimensión inválida;
+// se captura aparte para que el resto del resumen no se caiga por eso.
+async function getContactByMethod(dateRange) {
+  try {
+    const report = await runReport({
+      dateRanges: [dateRange],
+      dimensions: [{ name: 'customEvent:method' }],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: {
+        filter: { fieldName: 'eventName', stringFilter: { value: 'contact_click' } },
+      },
+      orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+    });
+    return (report.rows || [])
+      .map((row) => ({ method: row.dimensionValues[0].value, count: metricValue(row, 0) }))
+      .filter((row) => row.method);
+  } catch (err) {
+    console.error('contact_click por método no disponible todavía (¿falta la dimensión personalizada "method" en GA4?):', err && err.code);
+    return null;
+  }
+}
+
 exports.summary = async (req, res) => {
   const days = parseDays(req.query.days);
   const dateRange = { startDate: `${days}daysAgo`, endDate: 'today' };
 
   try {
-    const [totalsReport, eventsReport] = await Promise.all([
+    const [totalsReport, eventsReport, contactByMethod] = await Promise.all([
       runReport({
         dateRanges: [dateRange],
         metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }, { name: 'eventCount' }],
@@ -40,6 +65,7 @@ exports.summary = async (req, res) => {
         orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
         limit: 15,
       }),
+      getContactByMethod(dateRange),
     ]);
 
     const totalsRow = totalsReport.rows && totalsReport.rows[0];
@@ -54,7 +80,7 @@ exports.summary = async (req, res) => {
       count: metricValue(row, 0),
     }));
 
-    res.json({ days, totals, events });
+    res.json({ days, totals, events, contactByMethod });
   } catch (err) {
     const status = err instanceof AnalyticsError ? err.status : 500;
     if (err instanceof AnalyticsError) {

@@ -63,8 +63,16 @@ test.beforeEach(() => {
   console.error = (...a) => logs.push(a.join(' '));
   tokenHandler = () => json(200, { access_token: TEST_TOKEN, expires_in: 3600 });
   reportHandler = (body) => {
-    const hasEventDimension = (body.dimensions || []).some((d) => d.name === 'eventName');
-    if (hasEventDimension) {
+    const dims = (body.dimensions || []).map((d) => d.name);
+    if (dims.includes('customEvent:method')) {
+      return json(200, {
+        rows: [
+          { dimensionValues: [{ value: 'whatsapp' }], metricValues: [{ value: '3' }] },
+          { dimensionValues: [{ value: 'call' }], metricValues: [{ value: '1' }] },
+        ],
+      });
+    }
+    if (dims.includes('eventName')) {
       return json(200, {
         rows: [
           { dimensionValues: [{ value: 'page_view' }], metricValues: [{ value: '42' }] },
@@ -95,6 +103,10 @@ test('respuesta exitosa: totales y eventos con el formato esperado', async () =>
       { name: 'page_view', count: 42 },
       { name: 'contact_click', count: 4 },
     ],
+    contactByMethod: [
+      { method: 'whatsapp', count: 3 },
+      { method: 'call', count: 1 },
+    ],
   });
   assertNoKeyLeak(JSON.stringify(data));
 });
@@ -104,7 +116,7 @@ test('firma el JWT con scope de solo lectura y pide el property correcto', async
   assert.equal(tokenCalls.length, 1);
   assert.ok(String(tokenCalls[0].body).includes('grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer'));
 
-  assert.equal(reportCalls.length, 2);
+  assert.equal(reportCalls.length, 3);
   for (const call of reportCalls) {
     assert.equal(call.headers.Authorization, `Bearer ${TEST_TOKEN}`);
     assert.ok(call.url.includes(`/properties/${PROPERTY_ID}:runReport`));
@@ -115,7 +127,7 @@ test('reusa el token de acceso entre solicitudes (no pide uno nuevo cada vez)', 
   await get();
   await get();
   assert.equal(tokenCalls.length, 1, 'un solo token para ambas solicitudes');
-  assert.equal(reportCalls.length, 4);
+  assert.equal(reportCalls.length, 6);
 });
 
 test('?days= se usa en el rango de fechas, con limite de seguridad', async () => {
@@ -140,6 +152,25 @@ test('si Google rechaza el token (sin acceso en la propiedad), responde 503', as
   tokenHandler = () => json(401, { error: 'invalid_grant' });
   const res = await get();
   assert.equal(res.status, 503);
+  assertNoKeyLeak(logs.join('\n'));
+});
+
+test('si la dimension "method" todavia no existe en GA4, el resto del resumen sigue funcionando', async () => {
+  const baseHandler = reportHandler;
+  reportHandler = (body) => {
+    const dims = (body.dimensions || []).map((d) => d.name);
+    if (dims.includes('customEvent:method')) {
+      return json(400, { error: { code: 400, message: 'Field customEvent:method is not a valid dimension.' } });
+    }
+    return baseHandler(body);
+  };
+
+  const res = await get();
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.contactByMethod, null);
+  assert.deepEqual(data.totals, { activeUsers: 10, pageViews: 25, eventCount: 60 });
+  assert.equal(data.events.length, 2);
   assertNoKeyLeak(logs.join('\n'));
 });
 
