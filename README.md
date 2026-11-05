@@ -15,6 +15,7 @@ Plataforma multiempresa de chatbots inteligentes para WhatsApp (Node.js + Expres
 | `GET /health` | Estado en JSON |
 | `GET /health/db` | Comprueba la conexión a MySQL (`200` si funciona, `503` con mensaje genérico si falla) |
 | `POST /api/ai/test` | Prueba de IA: recibe `{"message": "..."}` y devuelve `{"reply": "..."}` |
+| `GET /api/analytics/summary` | Resumen de Google Analytics (GA4) para el panel de administración -- ver abajo |
 | `GET /webhook` | Verificación del webhook de WhatsApp Cloud API (Meta) |
 | `POST /webhook` | Recibe mensajes de WhatsApp (firma validada), responde con la IA y envía la respuesta |
 
@@ -30,6 +31,7 @@ src/controllers/     Manejadores de las rutas
 src/services/db.js   Conexión a MySQL (usa solo process.env.DB_*)
 src/services/whatsapp.js Verificación, firma y envío con WhatsApp Cloud API
 src/services/gemini.js Cliente de la Interactions API de Gemini (usa GEMINI_API_KEY)
+src/services/analyticsData.js Cliente de la Google Analytics Data API (cuenta de servicio, GA_CLIENT_EMAIL/GA_PRIVATE_KEY)
 src/services/        Lógica de negocio (IA, WhatsApp...) - futuro
 db/schema.sql        Esquema inicial (no se ejecuta automáticamente)
 src/models/          Acceso a datos / multiempresa - futuro
@@ -75,6 +77,18 @@ curl -X POST https://TU-VISTA-PREVIA/api/ai/test \
 ```
 
 Respuesta: `{"reply":"..."}`. Errores: `400` (mensaje ausente, no es texto o supera 1000 caracteres), `429` (cuota de la IA o límite interno) y `503` (clave o modelo no disponibles, fallo o demora de Google, respuesta inválida). Se usa 503 y no 502/504 porque Cloudflare sustituye el cuerpo de esos dos códigos por su propia página. Si Google responde 500/503 se reintenta una vez. Los logs muestran el código HTTP de Gemini y su mensaje (sin la clave).
+
+## Google Analytics (panel de administración)
+
+`GET /api/analytics/summary` devuelve un resumen de Google Analytics (GA4) para el sitio de DIGICY, consumido por el panel de administración (`digicyus.com/admin`). Autenticado como una cuenta de servicio de Google Cloud, no con la cuenta personal de nadie.
+
+Variables: `GA_CLIENT_EMAIL` y `GA_PRIVATE_KEY` (del archivo JSON de la cuenta de servicio -- nunca se sube el archivo, solo estos dos valores; `GA_PRIVATE_KEY` se pega tal cual, con los `\n` literales, el código los convierte a saltos de línea reales). La cuenta de servicio necesita acceso **Viewer** en la propiedad de Analytics (Admin -> Property Access Management). El ID de la propiedad (`562241157`) está fijo en `src/services/analyticsData.js` -- no es secreto, es solo el identificador de la propiedad de Analytics de digicyus.com.
+
+```bash
+curl https://TU-VISTA-PREVIA/api/analytics/summary?days=7
+```
+
+Respuesta: `{"days":7,"totals":{"activeUsers":...,"pageViews":...,"eventCount":...},"events":[{"name":"page_view","count":...},...]}`. `days` es opcional (por defecto 7, máximo 90). Límite de `ANALYTICS_RATE_LIMIT_PER_MIN` (por defecto 30) solicitudes por minuto. El token de acceso de Google se cachea en memoria mientras es válido (dura 1 hora), en vez de pedirse en cada solicitud.
 
 ## Frontend
 
